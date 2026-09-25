@@ -4,3 +4,9 @@ __pycache__/
 .ipynb_checkpoints/
 .DS_Store
 data/
+
+# LaTeX build files
+*.synctex.gz
+*.aux
+*.log
+*.out

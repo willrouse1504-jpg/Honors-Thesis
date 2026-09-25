@@ -1,0 +1,41 @@
+{
+    // LaTeX Workshop: build with MiKTeX's pdflatex directly. The default recipe runs
+    // latexmk, which is a Perl script, and there is no Windows Perl on this machine.
+    "latex-workshop.latex.tools": [
+        {
+            "name": "pdflatex",
+            "command": "C:/Users/Will Rouse/AppData/Local/Programs/MiKTeX/miktex/bin/x64/pdflatex.exe",
+            "args": [
+                "-synctex=1",
+                "-interaction=nonstopmode",
+                "-file-line-error",
+                "%DOC%"
+            ]
+        }
+    ],
+    // Two passes so cross-references (Figure 1, Table 2, ...) resolve
+    "latex-workshop.latex.recipes": [
+        {
+            "name": "pdflatex x2",
+            "tools": ["pdflatex", "pdflatex"]
+        }
+    ],
+    "latex-workshop.latex.recipe.default": "first",
+    "latex-workshop.latex.autoBuild.run": "onSave",
+    "latex-workshop.latex.autoClean.run": "onBuilt",
+    // Delete aux files by pattern; the default clean method runs latexmk (Perl) too
+    "latex-workshop.latex.clean.method": "glob",
+    "latex-workshop.view.pdf.viewer": "tab",
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.jj": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/c:\\Users\\Will Rouse\\projects\\Honors Thesis\\paper\\size_distributions.aux": true,
+        "**/c:\\Users\\Will Rouse\\projects\\Honors Thesis\\paper\\size_distributions.log": true,
+        "**/c:\\Users\\Will Rouse\\projects\\Honors Thesis\\paper\\size_distributions.gz": true,
+        "**/c:\\Users\\Will Rouse\\projects\\Honors Thesis\\paper\\size_distributions.out": true
+    }
+}
