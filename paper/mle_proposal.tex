@@ -1,0 +1,264 @@
+% Standalone proposal: distributional MLE for bank outcomes under oil supply shocks.
+% Does not depend on notebook output; compiles on its own.
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{newtxtext,newtxmath}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[authoryear,round]{natbib}
+\usepackage[hidelinks]{hyperref}
+
+\setlength{\parskip}{0.4em}
+\setlist{itemsep=0.25em, topsep=0.3em}
+
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\asinh}{\operatorname{arcsinh}}
+
+\title{A Distributional Maximum Likelihood Model of\\
+       Bank Outcomes under Oil Supply Shocks}
+\author{William Rouse\\ \small Honors Thesis: Methodology Proposal}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+This proposal lays out a maximum likelihood framework for studying how the entire cross-sectional distribution of bank outcomes responds to an exogenous oil supply shock. The model lets the location, scale, skewness, and tail weight of the conditional distribution each depend on the shock and on predetermined bank characteristics, including exposure to oil-producing and oil-consuming regions. A Gaussian heteroskedastic model serves as the baseline; the main specification uses the sinh-arcsinh family. Inference is clustered by time because the shock varies only across quarters, and the parametric results are validated against quantile and distribution regression.
+\end{abstract}
+
+\section{Research Question and Contribution}
+
+The question is how bank outcomes are \emph{distributed} across institutions after a macroeconomic shock, and which banks account for the change. Existing work usually reports the mean response of the average bank or of an industry aggregate. The descriptive evidence assembled so far shows why that is insufficient: dispersion widens in recessions for every outcome, the downside tails of equity and profitability lengthen in 2008--09, and large banks have more right-skewed asset growth. These are statements about tails and asymmetry, not means.
+
+The contribution has two parts. First, a model in which the shock is allowed to move any feature of the conditional distribution, so that the data decide whether a shock shifts the center, stretches the spread, or thickens one tail. Second, an identification strategy based on predetermined bank-level exposure that turns the estimated response into a \emph{mechanism}: which banks respond, and through what channel.
+
+\section{Data and Outcomes}
+
+The sample is the FDIC BankFind bank-quarter panel described in the data description, excluding insured branches of foreign banks. Let $i$ index banks and $t$ quarters. For horizon $h$ the outcomes are
+\begin{align*}
+  y^{A}_{it} &= 100\times\big[\ln A_{it}-\ln A_{i,t-h}\big] && \text{(log asset growth)}\\
+  y^{x}_{it} &= x_{it}-x_{i,t-h}, \quad x\in\{\text{equity ratio, ROA, NIM}\} && \text{(percentage-point change)}
+\end{align*}
+Three choices differ from the descriptive work. Log growth replaces percent change because percent change is bounded at $-100$ and mechanically adds right skew. The main horizon is $h=4$ (year over year), which removes the quarterly sawtooth in annualized ROA and NIM; horizons $h=1,2,3$ overlap mechanically and are estimated separately rather than stacked. Merger quarters, identified from FDIC structure-change dates, are either dropped or handled by a mixture component (Section~\ref{sec:extensions}).
+
+\section{Shock and Exposure}
+
+\paragraph{Shock.} Let $s_t$ be a quarterly oil supply shock aggregated from a monthly series. Candidates are the structural VAR shocks of \citet{kilian2009}, the \citet{baumeister2019} shocks, and the OPEC news shocks of \citet{kanzig2021}. Most such series end around 2018, so the usable sample is roughly 1992--2018. The shock is external, so it is not a generated regressor and needs no first stage.
+
+\paragraph{Exposure.} A negative oil supply shock raises oil prices, which helps oil-producing regions and hurts oil-consuming ones. The sign of a bank's exposure therefore matters. Let $E_i$ collect pre-determined, time-invariant exposure measures, fixed at or before the start of the sample window:
+\begin{itemize}
+  \item a \emph{producer-side} measure: the oil and gas share of output or employment in the bank's deposit footprint (FDIC Summary of Deposits weights applied to BEA or QCEW state or county data);
+  \item a \emph{consumer-side} measure: the share of local activity in oil-intensive industries such as transportation and manufacturing;
+  \item optionally, loan-portfolio shares from the call report (commercial and industrial, agricultural, commercial real estate).
+\end{itemize}
+Splitting exposure into producer and consumer sides gives the direct and indirect channels a testable form without an input-output mapping for banks.
+
+\paragraph{Bank characteristics.} Let $w_{i,t-h}$ collect lagged capitalization, liquidity, funding structure (core deposits versus wholesale), and log size. All characteristics are measured at $t-h$ so that they are predetermined with respect to $y_{it}$. Size enters continuously; there is no top-1-percent split, which removes the selection-on-growth problem created by grouping on current assets. Write $x_{it}=(E_i',\,w_{i,t-h}')'$.
+
+\section{Baseline: Gaussian Heteroskedastic Model}
+
+The baseline is a normal model in which the mean and standard deviation depend on the shock and on $x_{it}$:
+\begin{align}
+  y_{it} &= \alpha + \beta s_t + x_{it}'\gamma + (s_t x_{it})'\theta + \varepsilon_{it}, \qquad \varepsilon_{it}\sim N(0,\sigma_{it}^2), \label{eq:gmean}\\
+  \ln\sigma_{it} &= a_0 + \lambda s_t + x_{it}'a + (s_t x_{it})'\phi. \label{eq:gscale}
+\end{align}
+The log-likelihood is
+\begin{equation}
+  \ell=\sum_{i,t}\Big[-\ln\sigma_{it}-\tfrac12\ln(2\pi)-\frac{(y_{it}-\mu_{it})^2}{2\sigma_{it}^2}\Big]. \label{eq:gll}
+\end{equation}
+Here $\beta$ is the average response, $\theta$ is how the response varies with exposure and bank characteristics, and $\lambda$ says whether the shock widens ($\lambda>0$) or compresses ($\lambda<0$) dispersion. The baseline is retained because it shows what a reader would otherwise conclude from a mean-and-variance analysis and where that conclusion fails.
+
+\section{Main Specification: Sinh-Arcsinh Location--Scale--Shape Model}
+
+The Gaussian model forces symmetry and thin tails. The main model instead uses the sinh-arcsinh distribution of \citet{jones2009}, which separates skewness from tail weight and nests the normal. Define the standardized variable $z_{it}=(y_{it}-\mu_{it})/\sigma_{it}$ and
+\[
+  r_{it}=\delta_{it}\,\asinh(z_{it})-\epsilon_{it}.
+\]
+The density of $y_{it}$ is
+\begin{equation}
+  f(y_{it})=\frac{1}{\sigma_{it}}\cdot\frac{\delta_{it}\cosh(r_{it})}{\sqrt{2\pi\,(1+z_{it}^2)}}\exp\!\Big(-\tfrac12\sinh^2(r_{it})\Big), \label{eq:shash}
+\end{equation}
+where $\epsilon_{it}$ governs skewness (zero is symmetric) and $\delta_{it}>0$ governs tail weight ($\delta=1$ with $\epsilon=0$ is the normal; $\delta<1$ gives heavier tails). Each of the four parameters depends on the shock and on $x_{it}$ through its own linear index:
+\begin{equation}
+  \eta^{m}_{it}=c_m+b_m s_t+x_{it}'g_m+(s_t x_{it})'h_m,\qquad m\in\{\mu,\sigma,\epsilon,\delta\}, \label{eq:index}
+\end{equation}
+with the links
+\[
+  \mu_{it}=\eta^{\mu}_{it},\qquad \sigma_{it}=\exp(\eta^{\sigma}_{it}),\qquad \epsilon_{it}=\eta^{\epsilon}_{it},\qquad \delta_{it}=\exp(\eta^{\delta}_{it}).
+\]
+The parameters are estimated by maximizing
+\begin{equation}
+  \ell=\sum_{i,t}\Big[\ln\delta_{it}+\ln\cosh(r_{it})-\tfrac12\ln(2\pi)-\tfrac12\ln(1+z_{it}^2)-\tfrac12\sinh^2(r_{it})-\ln\sigma_{it}\Big]. \label{eq:ll}
+\end{equation}
+The Gaussian baseline is the special case $b_\epsilon=b_\delta=0$, $\epsilon=0$, $\delta=1$. Because the specification is nested, Gaussian, $t$-type, and skewed fits can be compared directly by likelihood and information criteria.
+
+\paragraph{Quantile response function.} The conditional quantile has a closed form. With $z_p=\Phi^{-1}(p)$,
+\begin{equation}
+  Q_p(y\mid s,x)=\mu+\sigma\,\sinh\!\Big(\frac{\asinh(z_p)+\epsilon}{\delta}\Big). \label{eq:quantile}
+\end{equation}
+The headline object of the paper is the shock's effect on each quantile, $\partial Q_p/\partial s$, plotted across $p$ and separately for high- and low-exposure banks. It shows directly which tail moves and how much, and it is easier to read than a table of shape coefficients.
+
+\section{Estimation and Inference}
+
+\paragraph{Estimation.} Maximize \eqref{eq:ll} numerically, initializing at the Gaussian solution with $\epsilon=0$, $\delta=1$. Standardize all covariates. With about one million observations and four linear indices, automatic differentiation (JAX or PyTorch) is practical; R's \texttt{gamlss} is an alternative. The tail parameter $\delta$ can be weakly identified, so inspect profile likelihoods and use multiple starting values.
+
+\paragraph{Inference.} The shock $s_t$ varies only by quarter, so the effective sample for $b_m$ is the number of quarters, roughly 70--100, not the number of bank-quarters. Information-matrix standard errors would be badly overconfident, and a likelihood-ratio test would reject nearly automatically. Inference therefore uses:
+\begin{itemize}
+  \item a sandwich variance estimator clustered by quarter, and two-way clustered by bank and quarter as a check;
+  \item a block bootstrap over time for the quantile-response curves;
+  \item robust Wald tests in place of likelihood-ratio tests. The key hypotheses are $H_0\!:b_\sigma=0$ (the shock does not change dispersion), $H_0\!:b_\epsilon=0$ (it does not change skewness), and $H_0\!:b_\delta=0$ (it does not change tail weight), plus joint tests on the exposure interactions $h_m$.
+\end{itemize}
+
+\paragraph{Fixed effects.} Quarter fixed effects absorb $s_t$, so $b_m$ is identified only when they are omitted. With quarter effects the interactions $h_m$ are still identified from cross-sectional exposure differences, which is the more credible source of variation. The paper reports both: the no-time-effects specification for aggregate effects, and the quarter-effects specification for the exposure interactions. Bank fixed effects in a nonlinear likelihood introduce an incidental-parameters bias of order $1/T_i$; results are compared with and without them, and with the sample restricted to banks with long histories.
+
+\section{Identification}
+
+The model is credible only if the variation in $s_t$ is exogenous to bank outcomes and the exposure interactions are not proxying for something else. The assumptions and the checks that go with them are:
+\begin{enumerate}
+  \item \textbf{Shock exogeneity.} An identified supply shock, not the oil price, is used. A demand-driven oil-price shock serves as a contrast; the supply-shock effect should differ from it.
+  \item \textbf{Predetermined exposure.} $E_i$ is fixed before the estimation window, and all $w_{i,t-h}$ are lagged. A placebo test regresses outcomes on the shock interacted with exposure \emph{before} the shock, which should be zero.
+  \item \textbf{Exposure is not size in disguise.} Interactions with log size and capital are included so that the exposure interaction is not picking up correlated bank characteristics.
+  \item \textbf{Weak aggregate effect.} Oil supply shocks are small and infrequent, and the aggregate effect on banks may be weak. A null aggregate response with significant exposure interactions is still an informative result, which is why the interaction design is central.
+\end{enumerate}
+
+\section{Validation}\label{sec:validation}
+
+\begin{itemize}
+  \item \textbf{Fit.} Compare Gaussian, Student-$t$, skew-$t$, and sinh-arcsinh fits by log-likelihood, AIC, and BIC. Inspect probability integral transform histograms and QQ plots of the fitted distribution against the data.
+  \item \textbf{Nonparametric cross-check.} Estimate the same specification by quantile regression and distribution regression \citep{chernozhukov2013}, and plot the parametric quantile-response curves \eqref{eq:quantile} against the nonparametric ones. Agreement validates the functional form; disagreement locates where it fails.
+  \item \textbf{Out-of-sample.} Estimate on an early window and evaluate density forecasts on a later one, so that fit is not judged only in sample. The full design is in Section~\ref{sec:backtest}.
+  \item \textbf{Robustness.} Alternative shock series, exposure definitions, horizons $h\in\{1,2,3,4\}$, dropping 2008--09, dropping merger quarters, and adding an exit-hazard model.
+\end{itemize}
+
+\section{Backtesting}\label{sec:backtest}
+
+The backtest asks whether the fitted conditional distribution predicts outcomes that were not used to estimate it. The oil supply shock is not forecastable, so this is not an ex-ante forecasting exercise. It evaluates \emph{shock-conditional density fit}: given the realized shock and a bank's predetermined characteristics, does the model's predicted distribution match what happened? The test is still genuinely out of sample, because the parameters are estimated without the test period. The design borrows from density-forecast evaluation \citep{gneiting2007} and Value-at-Risk backtesting.
+
+\subsection{Design}
+
+\begin{itemize}
+  \item \textbf{Expanding window.} Estimate on quarters up to an origin $T$, evaluate on quarter $T+1$, then move the origin forward and refit. Origins are spaced a year apart to keep estimation tractable. A rolling window is a robustness check.
+  \item \textbf{Embargo.} The outcome at horizon $h$ uses information from $t-h$ onward, so the last $h$ quarters before the test quarter are dropped from training. Otherwise a training outcome would overlap the test outcome.
+  \item \textbf{No leakage.} Covariates are standardized with training data only, the exposure measure $E_i$ is fixed at or before the start of the training window, and bank characteristics stay lagged as in the main model.
+  \item \textbf{Survivorship.} Only banks that report at both $t-h$ and $t$ are scored, the same rule as the estimation sample. The resulting bias in the left tail is reported.
+  \item \textbf{Leave-one-episode-out.} Few recessions fall in the sample and one dominates. The model is also refit excluding 2007--10 and 2020 and used to predict those episodes. This is the hardest test, since the model has not seen a crisis.
+\end{itemize}
+Because both shock series end around 2017--2019, the test period is roughly 2005 to the end of the shock sample, with the first training window covering 1992 to the origin.
+
+\subsection{Scoring rules}
+
+Let $f$ and $F$ be the fitted density and distribution function. For the sinh-arcsinh model the distribution function is closed-form: $F(y)=\Phi\!\big(\sinh(\delta\,\asinh(z)-\epsilon)\big)$ with $z=(y-\mu)/\sigma$. For each test quarter $t$ with $N_t$ banks:
+\begin{itemize}
+  \item \textbf{Log score.} $LS_t=\frac{1}{N_t}\sum_i \ln f\big(y_{it}\mid\hat\Theta,x_{it},s_t\big)$. Higher is better.
+  \item \textbf{CRPS.} The continuous ranked probability score is less sensitive than the log score to a single extreme outcome, which matters because failures and mergers can dominate a log score.
+  \item \textbf{Tail scores.} Because the tails are the object of interest, report the quantile (pinball) loss $\rho_p(y-\hat Q_p)$ at $p\in\{0.05,0.10,0.90,0.95\}$, and a tail-weighted CRPS.
+\end{itemize}
+Scores are averaged over banks within a quarter, then over quarters, and the quarterly series is retained for the comparisons below.
+
+\subsection{Calibration}
+
+A good average score does not show that the distribution is well calibrated, so calibration is tested separately.
+\begin{itemize}
+  \item \textbf{Probability integral transform.} Compute $u_{it}=F(y_{it})$, which is uniform if the model is correct. Histograms are reported overall and split by size, exposure, and recession versus expansion. A U-shape indicates tails that are too thin, a hump indicates tails that are too heavy, and a slope indicates misspecified skewness.
+  \item \textbf{Berkowitz test.} Apply the normal inverse to the PITs and test that the result is standard normal \citep{berkowitz2001}.
+  \item \textbf{Tail coverage.} Record the share of outcomes below the model's 5th and above its 95th percentile in each quarter, which should equal 5 percent. Levels are tested with the \citet{kupiec1995} test and independence over time, so that exceedances do not cluster, with the \citet{christoffersen1998} test.
+\end{itemize}
+Banks in the same quarter share the same shock, so their PITs are correlated. Tests are therefore conducted at the quarterly level, with HAC or block-bootstrap standard errors over quarters. The effective test sample is the number of quarters, not the number of bank-quarters.
+
+\subsection{Benchmarks and comparison}
+
+A backtest is informative only relative to alternatives, which are scored on the same test set.
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Benchmark & What the comparison isolates \\
+\midrule
+Unconditional rolling empirical distribution & Whether any conditioning helps \\
+Gaussian heteroskedastic model & The value of skewness and tail parameters \\
+Sinh-arcsinh without the shock & The value of the shock \\
+Sinh-arcsinh with the shock, no exposure interactions & The value of the exposure mechanism \\
+Full model & \\
+\bottomrule
+\end{tabular}
+\end{center}
+Each is summarized by a skill score, $1-S_{\text{model}}/S_{\text{benchmark}}$, computed from the quarterly score series. Differences are tested with the \citet{diebold1995} test using a HAC variance, or the \citet{giacomini2006} test when models are refit on a rolling window.
+
+\subsection{Procedure}
+
+\begin{enumerate}
+  \item For each origin $T$, drop the last $h$ training quarters, fit the standardization on the training data, and estimate every model by maximum likelihood, warm-starting from the previous origin's estimates.
+  \item On the test quarter, compute the log score, CRPS, quantile losses, PITs, and tail exceedances for each model.
+  \item Store the quarterly score series and exceedance indicators by model, size group, and exposure group.
+  \item Compute skill scores and Diebold--Mariano tests; run the calibration tests; repeat leaving out 2007--10 and 2020.
+\end{enumerate}
+
+\subsection{Reported output and interpretation}
+
+The paper reports a quarterly log-score series for each model with recessions shaded, PIT histograms and tail-exceedance tables by exposure and size, a skill-score table with Diebold--Mariano $p$-values, and the leave-out-2008 result. Two cautions apply. A good log score shows that the density is well calibrated but not that the shock is causal, so the placebo and exposure checks in the identification section remain the causal evidence. And because oil supply shocks are small relative to bank-level noise, a modest but statistically detectable gain in tail scores is a realistic outcome. If the shock adds little out of sample while the exposure interactions or a cycle-conditional variant add more, that is itself a finding about where the informative variation lies.
+
+\section{Known Issues and Extensions}\label{sec:extensions}
+
+\paragraph{Mergers.} Acquisitions create large one-quarter asset jumps that are not organic growth. Options are to flag structure-change quarters using EFFDATE and drop them, or to model asset growth as a two-component mixture of organic growth and a rare jump component.
+
+\paragraph{Survivorship.} A change is defined only if the bank reports at $t-h$ and $t$, so the last quarter before failure is missing and the left tail is understated, mostly in 2008--10. The direction of the bias is known and is reported. A separate exit-hazard model, estimated jointly or in a second stage, is a longer-term extension.
+
+\paragraph{Overlapping horizons.} Outcomes at adjacent horizons share information. Each horizon is estimated on its own, and the persistence of the quantile response across $h$ is reported as a local-projection-style path.
+
+\paragraph{Shape parameters in small cells.} The skewness and tail parameters need many observations in the tails. Modeling size continuously, rather than splitting the sample, uses all bank-quarters for every parameter and avoids the small-group problem of the large-bank cell.
+
+\section{Implementation Plan}
+
+\begin{enumerate}
+  \item Choose the shock series and confirm its date range; aggregate to quarterly.
+  \item Build the exposure measures $E_i$ from the Summary of Deposits and state or county industry data.
+  \item Construct outcomes at $h=4$ and the lagged characteristics $w_{i,t-h}$; flag merger quarters.
+  \item Estimate the Gaussian baseline with time-clustered errors.
+  \item Estimate the sinh-arcsinh model; compare fits by likelihood and information criteria.
+  \item Compute quantile-response curves and their block-bootstrap bands.
+  \item Cross-check with quantile and distribution regression.
+  \item Backtest: expanding-window refits, scoring, calibration tests, and benchmark comparisons (Section~\ref{sec:backtest}).
+  \item Run placebo and robustness checks; write up.
+\end{enumerate}
+
+\bibliographystyle{plainnat}
+\begin{thebibliography}{}
+\bibitem[Baumeister and Hamilton(2019)]{baumeister2019}
+Baumeister, C. and Hamilton, J.~D. (2019). Structural interpretation of vector autoregressions with incomplete identification: Revisiting the role of oil supply and demand shocks. \emph{American Economic Review}, 109(5), 1873--1910.
+
+\bibitem[Berkowitz(2001)]{berkowitz2001}
+Berkowitz, J. (2001). Testing density forecasts, with applications to risk management. \emph{Journal of Business \& Economic Statistics}, 19(4), 465--474.
+
+\bibitem[Christoffersen(1998)]{christoffersen1998}
+Christoffersen, P.~F. (1998). Evaluating interval forecasts. \emph{International Economic Review}, 39(4), 841--862.
+
+\bibitem[Chernozhukov et~al.(2013)]{chernozhukov2013}
+Chernozhukov, V., Fern{\'a}ndez-Val, I., and Melly, B. (2013). Inference on counterfactual distributions. \emph{Econometrica}, 81(6), 2205--2268.
+
+\bibitem[Diebold and Mariano(1995)]{diebold1995}
+Diebold, F.~X. and Mariano, R.~S. (1995). Comparing predictive accuracy. \emph{Journal of Business \& Economic Statistics}, 13(3), 253--263.
+
+\bibitem[Giacomini and White(2006)]{giacomini2006}
+Giacomini, R. and White, H. (2006). Tests of conditional predictive ability. \emph{Econometrica}, 74(6), 1545--1578.
+
+\bibitem[Gneiting and Raftery(2007)]{gneiting2007}
+Gneiting, T. and Raftery, A.~E. (2007). Strictly proper scoring rules, prediction, and estimation. \emph{Journal of the American Statistical Association}, 102(477), 359--378.
+
+\bibitem[Jones and Pewsey(2009)]{jones2009}
+Jones, M.~C. and Pewsey, A. (2009). Sinh-arcsinh distributions. \emph{Biometrika}, 96(4), 761--780.
+
+\bibitem[K{\"a}nzig(2021)]{kanzig2021}
+K{\"a}nzig, D.~R. (2021). The macroeconomic effects of oil supply news: Evidence from OPEC announcements. \emph{American Economic Review}, 111(4), 1092--1125.
+
+\bibitem[Kupiec(1995)]{kupiec1995}
+Kupiec, P.~H. (1995). Techniques for verifying the accuracy of risk measurement models. \emph{Journal of Derivatives}, 3(2), 73--84.
+
+\bibitem[Kilian(2009)]{kilian2009}
+Kilian, L. (2009). Not all oil price shocks are alike: Disentangling demand and supply shocks in the crude oil market. \emph{American Economic Review}, 99(3), 1053--1069.
+\end{thebibliography}
+
+\end{document}

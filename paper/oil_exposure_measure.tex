@@ -1,0 +1,143 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{booktabs,array,tabularx}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage[hidelinks]{hyperref}
+\setlist{itemsep=2pt,topsep=4pt}
+
+\title{Measuring Bank Exposure to Oil Shocks:\\Variables, Data Sources, and Method}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Variables in the current data worth using}
+
+The data contain no direct energy-loan variable, because the Call Report does not break C\&I loans out by industry. Exposure must therefore be proxied by \emph{where} a bank operates and \emph{what} it lends.
+
+\subsection*{Exposure (who is exposed)}
+\begin{itemize}
+  \item \textbf{Geography:} State Code, State and County Number, Zip, City, CBSA Name, FDIC Region, Federal Reserve District. This is the strongest identifier because oil exposure is local; it links to county-level oil dependence.
+  \item \textbf{Loan mix:} Commercial \& Industrial Loans, Construction and Development, Non-Farm Non-Residential (CRE), Multi-Family Residential, 1--4 Family Residential, Loans to Individuals, Total Real Estate Loans. Scale each by total assets or total loans.
+  \item \textbf{Funding mix:} Non-Interest-Bearing Deposits, Core (Retail) Deposits, Estimated Uninsured Deposits, Total Deposits, Net Loans to Deposits.
+\end{itemize}
+
+\subsection*{Outcomes (how they respond)}
+\begin{itemize}
+  \item Net Charge-Offs to Loans; Non-Current Loans to Loans; Non-Current Assets plus OREO to Assets
+  \item Provision to Assets; Loss Allowance to Loans
+  \item Return on Assets; Net Interest Margin; Net Loans growth; Other Real Estate Owned
+\end{itemize}
+
+\subsection*{Controls}
+log(Total Assets), Equity Capital to Assets, Tier 1 Risk-Based Capital Ratio, securities share of assets, Efficiency Ratio, Institution Class, Multi-Bank Holding Company and holding-company ID (for clustering), Trust Powers.
+
+\subsection*{Skip}
+Dates, FDIC office and regulator codes, Form Number, and duplicate ratio variants. Keep either the dollar level or the ratio, not both.
+
+\section{Data sources that join easily}
+
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{4.2cm}Xp{2.8cm}@{}}
+\toprule
+\textbf{Source} & \textbf{Adds} & \textbf{Join key}\\
+\midrule
+FDIC Summary of Deposits (SOD) & Branch-level deposits by county, annual; essential for weighting exposure & Cert, county FIPS\\
+BLS QCEW & County employment and wages in oil and gas (NAICS 211, 213111/2, 2111) & County FIPS\\
+BEA Regional & County or state GDP from mining and oil and gas & County FIPS\\
+EIA & State and county oil production, reserves & State or county\\
+FRED & WTI (\texttt{DCOILWTICO}), Brent, state unemployment, macro controls & Date\\
+Baker Hughes & Rig counts by state & State, date\\
+FFIEC bulk Call Reports & Full schedules, e.g.\ RC-C loans by collateral and size & RSSD ID\\
+CRA and HMDA & Small-business and mortgage lending by county & Tract or county\\
+CRSP & Bank stock returns, a market-based check for public banks & NY Fed RSSD--PERMCO link\\
+\bottomrule
+\end{tabularx}
+
+\medskip
+SOD and QCEW are the most valuable additions: together they give a bank-level, geographically weighted exposure.
+
+\section{Suggested method}
+
+\subsection*{Step A: a predetermined exposure index (shift-share style)}
+Weight each county's oil intensity by the bank's deposit footprint:
+\[
+  \text{Exposure}_i \;=\; \sum_c \text{DepositShare}_{i,c}\times \text{OilIntensity}_c .
+\]
+$\text{OilIntensity}_c$ is oil and gas employment (or mining GDP) as a share of total county employment. Fix both the weights and the intensity at a \textbf{pre-period} (e.g., 2010--2013) so banks' own choices during the shock do not contaminate the measure. Optionally interact the index with loan mix (e.g., the C\&I plus CRE plus construction share) to capture banks that are both located in oil counties and lend heavily to cyclical sectors.
+
+\subsection*{Step B: a behavioral sensitivity (bank-specific beta)}
+For each bank estimate
+\[
+  y_{it} = \alpha_i + \beta_i\,\Delta\log(\text{WTI})_{t-k} + \gamma' X_{it} + \varepsilon_{it},
+\]
+where $y$ is ROA, the NCO ratio, or loan growth, and $k$ ranges over 0--4 quarters. $\beta_i$ is the bank's realized sensitivity. Rolling windows work but are noisy with few quarters, so shrink the betas (empirical Bayes) or estimate them by group.
+
+\subsection*{Step C: panel test tying the two together}
+\[
+  y_{it} = \alpha_i + \lambda_t + \delta\,(\text{Exposure}_i\times \Delta\text{Oil}_t) + \gamma' X_{it} + \varepsilon_{it}.
+\]
+Time fixed effects $\lambda_t$ absorb the oil price itself, so $\delta$ is identified from cross-sectional differences in exposure. Run it on the 2014--16 collapse and on 2020, and separate up moves from down moves since effects are likely asymmetric. Cluster standard errors by bank (or state, if exposure varies mostly at that level).
+
+\subsection*{Step D: validation}
+\begin{itemize}
+  \item Check that the Step A exposure predicts the Step B betas.
+  \item Compare with equity-return betas for public banks.
+  \item Run a placebo test on non-oil counties or periods.
+\end{itemize}
+
+\section{Connection to the MLE model}
+
+The exposure work above supplies the inputs $x_{it}=(E_i',w_{i,t-h}')'$ that the distributional MLE in \texttt{mle\_proposal.tex} interacts with the oil supply shock $s_t$. The MLE also replaces two pieces of the regression design in Section~3.
+
+\subsection*{Where each piece enters}
+
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{4.3cm}X@{}}
+\toprule
+\textbf{This document} & \textbf{Role in the MLE}\\
+\midrule
+Step A exposure index & The producer-side element of $E_i$, entering every index $\eta^m_{it}$ ($\mu,\sigma,\epsilon,\delta$) through $x_{it}$ and $s_t x_{it}$\\
+Consumer-side index (same construction, oil-intensive NAICS such as transportation and manufacturing in place of oil and gas) & The consumer-side element of $E_i$; the sign of the response differs by side, so the two are kept separate\\
+Loan-mix shares (C\&I, CRE, construction) & Optional additional elements of $E_i$, or lagged elements of $w_{i,t-h}$ if measured at $t-h$\\
+Equity to assets, securities and cash share, core-deposit share, log assets & The lagged characteristics $w_{i,t-h}$, standardized on the training sample\\
+Step C panel regression & The mean equation \ of the Gaussian baseline; $\delta$ in Step C corresponds to $h_\mu$\\
+Step B bank-specific beta & Replaced by the model's implied response $\partial Q_p/\partial s$ evaluated at bank $i$'s $x_{it}$, so sensitivity is reported by quantile, not as one number\\
+\bottomrule
+\end{tabularx}
+
+\subsection*{Changes needed to make the two consistent}
+\begin{enumerate}
+  \item \textbf{Shock.} Use the identified supply shock $s_t$ (Kilian, Baumeister--Hamilton, or K\"anzig), not $\Delta\log(\text{WTI})$. Keep $\Delta\log(\text{WTI})$ as the demand-driven contrast in the identification checks.
+  \item \textbf{Outcomes.} Use the MLE outcomes at $h=4$: $100\,[\ln A_{it}-\ln A_{i,t-4}]$ and four-quarter changes in equity ratio, ROA, and NIM. NCO, non-current, and provision ratios are non-negative and heavily right-skewed; they need an $\operatorname{arcsinh}$ transform (or a separate model) before the sinh-arcsinh family is a sensible fit.
+  \item \textbf{Exposure window.} The MLE requires $E_i$ to be fixed at or before the start of the sample. Summary of Deposits begins in 1994, so weights fixed at 1994 imply starting the estimation sample in about 1995 rather than 1992. QCEW and BEA county data are available for the pre-period.
+  \item \textbf{Scaling.} Deposit-weighted oil intensity is zero or near zero for most banks and very large for a few. Standardize an $\operatorname{arcsinh}$ or log transform of the index (the simulation in \texttt{src/simulate\_mle.py} uses a standard-normal $E_i$), and report results by exposure quantile so the interaction is not driven by a handful of Texas, Oklahoma, and Louisiana banks.
+  \item \textbf{Time effects.} Quarter effects absorb $s_t$, so as in the MLE the aggregate effect $b_m$ comes from the specification without them and the exposure interactions $h_m$ from the one with them.
+\end{enumerate}
+
+\subsection*{What the exposure measure lets the MLE test}
+\begin{itemize}
+  \item $h_\mu\neq 0$: high-exposure banks have a different mean response, the Step C result.
+  \item $h_\sigma\neq 0$: the shock widens dispersion more for exposed banks.
+  \item $h_\epsilon\neq 0$ or $h_\delta\neq 0$: the shock moves the \emph{tails} of exposed banks differently. This is the new information over a mean regression, and it is what the quantile-response curves $\partial Q_p/\partial s$, drawn separately for high- and low-exposure banks, display.
+  \item Producer versus consumer coefficients of opposite sign, consistent with a supply shock that raises prices, help produce mechanism evidence.
+\end{itemize}
+
+\subsection*{Suggested order of work}
+\begin{enumerate}
+  \item Build the producer and consumer indices from SOD and QCEW, fixed at 1994.
+  \item Merge them and the lagged controls into the bank-quarter panel with outcomes at $h=4$.
+  \item Replace the standard-normal $E_i$ in \texttt{simulate\_mle.py} with the empirical index distribution to check that the SHASH estimator recovers known parameters when exposure is this skewed.
+  \item Estimate the Gaussian baseline, then the SHASH model, with quarter-clustered errors, followed by the quantile-response figures and placebo test on pre-shock quarters.
+\end{enumerate}
+
+\section{Caveats}
+\begin{itemize}
+  \item Exposure from deposit geography measures where deposits are gathered, not necessarily where loans are made; CRA/HMDA lending by county can cross-check this.
+  \item Large banks with national footprints show diluted exposure; consider size buckets or excluding the largest banks.
+  \item Oil prices coincide with broader macro shocks (2008, 2020); include state-level macro controls or year-by-region fixed effects.
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,45 @@
+SIMULATED MLE DEMONSTRATION  (seed 1504, 20,000 bank-quarters)
+
+1. MODEL COMPARISON
+            model  n_params       logL       AIC       BIC
+Gaussian (hetero)        12 -36717.943 73459.887 73554.729
+            SHASH        24 -29403.357 58854.713 59044.397
+LR statistic (SHASH vs Gaussian, 12 restrictions) = 14,629.2
+
+2. SHASH COEFFICIENTS (truth vs estimate, time-clustered SEs)
+parameter      covariate  truth  estimate  cluster_se  t_stat  wald_z_vs_zero
+       mu          const  1.000     1.013       0.015   0.823          65.920
+       mu          shock -0.600    -0.596       0.006   0.609         -92.317
+       mu       exposure  0.200     0.198       0.012  -0.147          15.976
+       mu           size  0.300     0.313       0.012   1.022          25.206
+       mu shock*exposure -0.500    -0.496       0.006   0.733         -88.477
+       mu     shock*size  0.000     0.005       0.005   1.009           1.009
+log_sigma          const  0.000    -0.018       0.019  -0.966          -0.966
+log_sigma          shock  0.250     0.276       0.014   1.870          19.758
+log_sigma       exposure  0.100     0.151       0.017   2.959           8.744
+log_sigma           size -0.150    -0.182       0.018  -1.768         -10.100
+log_sigma shock*exposure  0.150     0.107       0.012  -3.471           8.610
+log_sigma     shock*size  0.000    -0.019       0.011  -1.727          -1.727
+      eps          const  0.000    -0.014       0.010  -1.396          -1.396
+      eps          shock -0.350    -0.356       0.006  -0.880         -56.040
+      eps       exposure  0.000    -0.004       0.008  -0.487          -0.487
+      eps           size  0.100     0.105       0.009   0.546          11.671
+      eps shock*exposure -0.250    -0.261       0.007  -1.568         -37.872
+      eps     shock*size  0.000     0.011       0.008   1.514           1.514
+log_delta          const  0.000    -0.008       0.013  -0.664          -0.664
+log_delta          shock -0.150    -0.133       0.008   2.063         -15.893
+log_delta       exposure  0.000     0.034       0.010   3.243           3.243
+log_delta           size  0.000    -0.021       0.012  -1.786          -1.786
+log_delta shock*exposure -0.050    -0.071       0.007  -3.112         -10.508
+log_delta     shock*size  0.000    -0.007       0.007  -0.990          -0.990
+
+3. EFFECT OF A 2-SD ADVERSE SHOCK ON QUANTILES (exposure = +1 SD, size = 0)
+ quantile  true_effect  shash_effect  gaussian_effect
+    0.050      -49.528       -49.863          -41.352
+    0.250      -20.278       -20.712          -18.394
+    0.500       -9.362        -9.648           -2.436
+    0.750       -5.290        -5.457           13.522
+    0.950       -3.751        -3.877           36.480
+
+4. GAUSSIAN SHOCK COEFFICIENTS (mean, log-sigma) for reference
+mean shock=-0.690 (se 0.018); log-sigma shock=0.750 (se 0.055)
